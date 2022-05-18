@@ -1,0 +1,1083 @@
+USE [CRM_Workspace]
+GO
+
+/****** Object:  StoredProcedure [dbo].[CRM_Campaign_0000_CampaignID_CampaignName]    Script Date: 18/05/2022 16:38:58 ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+
+
+
+-- =============================================
+-- Author: First and last name
+-- Create date: DD/MM/YYYY
+-- Description:	CRM Campaign - Campaign name and Desc
+-- =============================================
+
+
+CREATE PROCEDURE [dbo].[CRM_Campaign_0000_CampaignID_CampaignName] @ProcedureExecutionID BIGINT
+AS
+    BEGIN
+
+        BEGIN TRY
+
+            /*
+			SELECT *
+			FROM   CaMS.dbo.VW_CM_CampaignStructure
+			WHERE  CampaignID = 
+			--AND IsActive = 1
+			*/
+
+            /******************************************************************************/
+            /***--- Defining Variables ------------------------------------------------ ***/
+            /******************************************************************************/
+
+            DECLARE @UsedRunProcess BIT = 1
+
+            --------------------------------
+            ---***/PLEASE DON'T TOUCH/***---
+            -------------------------------- 
+
+            --DECLARE @ProcedureExecutionID BIGINT = ''
+            --DECLARE @StoreProcedureName NVARCHAR(256) =''
+
+            DECLARE @StoreProcedureName NVARCHAR(256) = OBJECT_NAME (@@PROCID);
+            DECLARE @DBName sysname = DB_NAME ()
+            DECLARE @CURRENT_USER sysname = CURRENT_USER
+
+            DECLARE @ExecutionMethodID TINYINT
+            DECLARE @ExecutionMethodTypeID TINYINT
+            DECLARE @ActionTypeID TINYINT
+
+            DECLARE @PrimaryIdentifierID BIGINT
+            DECLARE @SecondaryIdentifierID BIGINT
+            DECLARE @ActionType VARCHAR(50)
+            DECLARE @CampaignID BIGINT
+            DECLARE @GeneralID BIGINT
+            DECLARE @JobID BIGINT
+            DECLARE @RunCampaignLevelGroupID BIGINT
+
+            DECLARE @ProcessTypeID TINYINT
+            DECLARE @StoredProcedureTypeID TINYINT
+            DECLARE @TemplateTypeID TINYINT
+
+            DECLARE @CycleID BIGINT
+            DECLARE @ProcessID TINYINT
+            DECLARE @RunNumber BIGINT
+
+            DECLARE @Message NVARCHAR(MAX)
+            DECLARE @Status VARCHAR(20) = 'Running'
+            DECLARE @IsRunning BIT = 1
+
+            SELECT     @PrimaryIdentifierID = CASE
+                                                  WHEN ProcessTypeID = 1
+                                                      THEN CampaignID
+                                                  WHEN ProcessTypeID = 2
+                                                      THEN AlertID
+                                                  WHEN ProcessTypeID = 3
+                                                      THEN ReportID
+                                                  WHEN ProcessTypeID = 4
+                                                      THEN BI_ID
+                                              END
+                      ,@CampaignID = CampaignID
+                      ,@JobID = IIF(StoredProcedureTypeID IN ( 4, 5 ), GeneralID, NULL)                                                         --'PopulationTemplate', 'RewardTemplate' 
+                      ,@RunCampaignLevelGroupID = IIF(pem.ExecutionMethodTypeID = 2 AND pe.StoredProcedureTypeID IN ( 2, 10 ), GeneralID, NULL) --'Campaign', 'LiveChannel Template' 
+                      ,@ProcessTypeID = ProcessTypeID
+                      ,@StoredProcedureTypeID = StoredProcedureTypeID
+                      ,@TemplateTypeID = TemplateTypeID
+                      ,@ExecutionMethodID = pe.ExecutionMethodID
+                      ,@ExecutionMethodTypeID = pem.ExecutionMethodTypeID
+                      ,@ActionTypeID = pem.ActionTypeID
+                      ,@ActionType = ActionType
+                      ,@CycleID = CycleID_RunProcess
+                      ,@ProcessID = ProcessID
+            FROM       CaMS.dbo.CM_ProcedureExecution_Monitor AS pe WITH (NOLOCK)
+            INNER JOIN CaMS.dbo.CM_ProcessExecutionMethods AS pem WITH (NOLOCK) ON (pe.ExecutionMethodID = pem.ExecutionMethodID)
+            WHERE      ProcedureExecutionID = @ProcedureExecutionID
+
+            /*
+			SELECT StoreProcedureName = @StoreProcedureName, DBName = @DBName, [CURRENT_USER] = @CURRENT_USER
+			SELECT ExecutionMethodID = @ExecutionMethodID, ActionType = @ActionType,PrimaryIdentifierID = @PrimaryIdentifierID, CampaignID = @CampaignID, JobID = @JobID, RunCampaignLevelGroupID = @RunCampaignLevelGroupID
+			SELECT StoredProcedureTypeID = @StoredProcedureTypeID, ActionTypeID = @ActionTypeID
+			SELECT ProcessID = @ProcessID, ProcessTypeID = @ProcessTypeID, TemplateTypeID = @TemplateTypeID, CycleID = @CycleID, RunNumber = @RunNumber
+			SELECT [Message] = @Message, [Status] = @Status, IsRunning = @IsRunning
+			*/
+
+            /*
+		    
+			/******************************************************************************/
+			/***--- START - Run Without CM_Process_RunProcess ------------------------- ***/
+			/******************************************************************************/
+
+			BEGIN TRY
+
+			----------------------------------------------------------------------------
+			--- Please fill the Parameters ---------------------------------------------
+			----------------------------------------------------------------------------
+
+			DECLARE @StoreProcedureName NVARCHAR(256) = ''
+			DECLARE @ExecutionMethodID TINYINT = 3 --Manually 
+			DECLARE @ActionType VARCHAR(20) = 'RealSend' --'DataTest', 'ChannelTest', 'RealSend' 
+			DECLARE @StoredProcedureType NVARCHAR(256) = 'Campaign' --'Campaign', 'Flow', 'Population Template', 'Reward Template', 'LiveChannel Template', 'Alert', 'Report', 'BI'
+			DECLARE @PrimaryIdentifierID BIGINT = XXXX --CampaignID
+			DECLARE @SecondaryIdentifierID BIGINT = NULL --FlowID, JobTemplateID, JobRewardID, RunCampaignLevelGroupID
+
+			----------------------------------------------------------------------------
+			--- Defining variables -----------------------------------------------------
+			----------------------------------------------------------------------------
+			--------------------------------
+			---*** PLEASE DONT TOUCH ***---
+			-------------------------------- 
+
+			DECLARE @DBName sysname = DB_NAME ()
+			DECLARE @CURRENT_USER sysname = CURRENT_USER
+
+			DECLARE @ExecutionMethodTypeID TINYINT = ( --dbo.CM_ExecutionMethodTypes: Manually, Automatic
+														 SELECT ExecutionMethodTypeID
+														 FROM   CaMS.dbo.CM_ProcessExecutionMethods WITH (NOLOCK)
+														 WHERE  ExecutionMethodID = @ExecutionMethodID
+													 )
+
+			DECLARE @ProcessTypeID TINYINT --dbo.CM_ProcessTypes: Campaign, Alert, Report, BI
+			DECLARE @StoredProcedureTypeID TINYINT --dbo.CM_StoredProcedureTypes: AllCampaignTypes, Campaign,Flow, Population Template,Reward Template, Alert, Report, BI
+			DECLARE @TemplateTypeID TINYINT --CM_CampaignTemplateTypes: Population Definition, Population Reminder, Population List, Reward Announcement, Reward Confirmation
+
+			SELECT @StoredProcedureTypeID = StoredProcedureTypeID
+				  ,@ProcessTypeID = ProcessTypeID
+			FROM   CaMS.dbo.CM_StoredProcedureTypes WITH (NOLOCK)
+			WHERE  StoredProcedureTypeDesc = @StoredProcedureType
+
+			DECLARE @JobID BIGINT = IIF(@StoredProcedureTypeID IN ( 4, 5 ), @SecondaryIdentifierID, NULL) --'Population Template', 'Reward Template' 
+			DECLARE @RunCampaignLevelGroupID BIGINT = IIF(@ExecutionMethodTypeID = 2 AND @StoredProcedureTypeID IN ( 2, 10 ), @SecondaryIdentifierID, NULL) --'Campaign', 'LiveChannel Template' 
+
+			DECLARE @CycleID BIGINT
+			DECLARE @ProcessID TINYINT = 10 --Run Campaigns - Manually - Fixed manually 				 
+			DECLARE @RunNumber BIGINT
+
+			DECLARE @Message NVARCHAR(MAX)
+			DECLARE @Status VARCHAR(20) = 'Running'
+			DECLARE @IsRunning BIT = 1
+
+			DECLARE @CampaignID bigint  = @PrimaryIdentifierID
+
+			DECLARE @ActionTypeID TINYINT = (
+												SELECT ActionTypeID
+												FROM   dbo.CM_ProcessExecutionMethods
+												WHERE  ExecutionMethodID = @ExecutionMethodID
+											)
+
+			------------------------------
+			---Specific/local variables---
+			------------------------------
+
+			DECLARE @ProcedureExecutionID BIGINT
+			DECLARE @UsedRunProcess BIT = 0
+			------------------------------
+			---------------------------------------------------------------------
+			---*** Check possible combinations - check all input variables ***--- 
+			---------------------------------------------------------------------
+		
+			  DECLARE @IsValid BIT = (CASE
+                                        WHEN @ExecutionMethodTypeID = 1 --Automatic
+                                            AND @StoredProcedureType IN ( 'AllCampaignTypes', 'Alert', 'Report', 'BI' )
+                                            AND @PrimaryIdentifierID IS NULL
+                                            AND @SecondaryIdentifierID IS NULL
+                                            AND @ExecutionMethodID IN ( 1, 2, 4, 5, 7 ) 
+                                            THEN 1
+                                        WHEN @ExecutionMethodTypeID = 2 --Manually
+                                            AND @StoredProcedureType IN ( 'Campaign', 'Alert', 'Report', 'BI' )
+                                            AND @PrimaryIdentifierID IS NOT NULL
+                                            AND @SecondaryIdentifierID IS NULL
+                                            AND @ExecutionMethodID IN (3,6,8)
+                                            THEN 1
+                                        WHEN @ExecutionMethodTypeID = 2 --Manually
+                                            AND @StoredProcedureType IN ( 'Campaign', 'Flow', 'Population Template', 'Reward Template' ) --Changed by Hadas on 1.12.2019
+                                            AND @PrimaryIdentifierID IS NOT NULL
+                                            AND @SecondaryIdentifierID IS NOT NULL
+                                            AND @ExecutionMethodID = 3
+                                            THEN 1
+                                        WHEN @ExecutionMethodTypeID = 2 --Manually 
+                                            AND @StoredProcedureType = 'LiveChannel Template' --Please note - this template can be run only manually
+                                            AND @PrimaryIdentifierID IS NOT NULL
+                                            AND @SecondaryIdentifierID IS NOT NULL
+                                            AND @ExecutionMethodID IN ( 6, 8 ) --Update, Remove
+
+                                            THEN 1
+                                        ELSE 0
+                                    END
+                                   )
+
+			IF (@IsValid = 0)
+				BEGIN
+
+					SET @Message = 'At least one input variable value is wrong (@ActionType, @ExecutionMethodID, @StoredProcedureType, @CampaignID,@GeneralID) - Check possible combinations'
+
+					RAISERROR (@Message, 16, 1);
+				END
+
+			---------------------------------------------------------------------------------------
+			---*** Creating CycleID and Updating CM_DailyLog & CM_ProcessConfiguration table ***--- 
+			---------------------------------------------------------------------------------------
+
+			INSERT INTO dbo.CM_RunProcess_Cycles (ProcessID, ProcessTypeID, ExecutionMethodID, ActionType, StoredProcedureTypeID, PrimaryIdentifierID, SecondaryIdentifierID, [Status], IsRunning)
+			VALUES (@ProcessID, @ProcessTypeID, @ExecutionMethodID, @ActionType, @StoredProcedureTypeID, @PrimaryIdentifierID, @SecondaryIdentifierID, @Status, @IsRunning)
+
+			SET @CycleID = SCOPE_IDENTITY ()
+
+			SELECT CycleID=@CycleID
+
+			UPDATE dbo.CM_ProcessConfiguration
+			SET    StartDate = GETDATE ()
+				  ,EndDate = NULL
+				  ,[Status] = @Status
+				  ,IsRunning = @IsRunning
+				  ,LastRunDate = GETDATE ()
+				  ,CycleID_CurrentProcess = @CycleID
+				  ,HasError = 0
+				  ,ErrorDesc = NULL
+				  ,NumberOfProceduresWithError = 0
+				  ,ProceduresErrorDesc = NULL
+				  ,OrderPerson = @CURRENT_USER
+			WHERE  ProcessID = @ProcessID
+
+			INSERT INTO CaMS.dbo.CM_ProcedureExecution_Monitor (CampaignID, GeneralID, StoredProcedureTypeID, TemplateTypeID, StoreProcedureName, ActionType, JobName, JobCommand, DBName, ExecutionMethodID, CycleID_RunProcess, ProcessID, ProcessTypeID)
+			SELECT CampaignID = @PrimaryIdentifierID
+				  ,GeneralID = @SecondaryIdentifierID
+				  ,StoredProcedureTypeID = @StoredProcedureTypeID
+				  ,TemplateTypeID = NULL
+				  ,StoreProcedureName = @StoreProcedureName
+				  ,ActionType = @ActionType
+				  ,JobName = N''
+				  ,JobCommand = N''
+				  ,DBName = @DBName
+				  ,ExecutionMethodID = @ExecutionMethodID
+				  ,CycleID = @CycleID
+				  ,ProcessID = @ProcessID
+				  ,ProcessTypeID = @ProcessTypeID
+
+			SET @ProcedureExecutionID = SCOPE_IDENTITY ()
+
+			SELECT ProcedureExecutionID = @ProcedureExecutionID --Print
+
+			/******************************************************************************/
+			/***--- END - Run Without CM_Process_RunProcess --------------------------- ***/
+			/******************************************************************************/
+	  
+		--  */
+
+            /******************************************************************************/
+            /***--- Print and Update CM_DailyLog  --------------------------------------***/
+            /******************************************************************************/
+
+            SET @Message = N'START'
+
+            INSERT INTO dbo.CM_DailyLog (EventStatus, EventDescription, ExecutionMethodID, PrimaryIdentifierID, StoreProcedureName, ProcessID, ProcessTypeID, CycleID, RunNumber, ProcedureExecutionID)
+            VALUES (@Status, @Message, @ExecutionMethodID, @PrimaryIdentifierID, @StoreProcedureName, @ProcessID, @ProcessTypeID, @CycleID, @RunNumber, @ProcedureExecutionID)
+
+            UPDATE CaMS.dbo.CM_ProcedureExecution_Monitor
+            SET    ProcedureStartDate = GETDATE ()
+                  ,IsProcedureRunning = 1
+                  ,ProcedureStatus = @Status
+            WHERE  ProcedureExecutionID = @ProcedureExecutionID
+
+            /******************************************************************************/
+            /***--- Check Campaign details validation ----------------------------------***/
+            /******************************************************************************/
+
+            --DECLARE @CampaignID BIGINT = 
+
+            DECLARE @TotalErrors INT;
+
+            EXEC [dbo].[CM_Check_Campaigns_Validation_NoPrint] @CampaignID, @TotalErrors OUTPUT;
+
+            --SELECT @TotalErrors 
+
+            IF (@TotalErrors > 0)
+                BEGIN
+
+                    SET @Message = CONVERT (VARCHAR(20), @TotalErrors) + N'Error/s were found in campaign validation';
+
+                    RAISERROR (@Message, 16, 1);
+
+                END;
+
+            /******************************************************************************/
+            /***--- Create final table for validation process --------------------------***/
+            /******************************************************************************/
+
+            -------------------------------------------------------------
+            --- *** Population for "insert" Action ~ distribution *** ---
+            -------------------------------------------------------------
+
+            IF (OBJECT_ID ('tempdb..#FinalPop') IS NOT NULL)
+                BEGIN
+                    DROP TABLE #FinalPop;
+                END;
+
+            DECLARE @BasicPop [dbo].[CM_ContactsValidation_Population] --For an explanation of the fields - check out CM_ContactsValidation_Population
+
+            SELECT *
+            INTO   #FinalPop
+            FROM   @BasicPop
+
+            --SELECT * FROM #FinalPop
+
+            ------------------------------------------------------------------------------
+            --- *** Population for "update/remove" action - live channels contacts *** ---
+            ------------------------------------------------------------------------------
+
+            IF (OBJECT_ID ('tempdb..#FinalPop_LiveChannelsContacts') IS NOT NULL)
+                BEGIN
+                    DROP TABLE #FinalPop_LiveChannelsContacts;
+                END;
+
+            DECLARE @BasicPop_LiveChannels [dbo].[CM_LiveChannelsContacts_Population]
+
+            SELECT *
+            INTO   #FinalPop_LiveChannelsContacts
+            FROM   @BasicPop_LiveChannels
+
+            --SELECT * FROM #FinalPop_LiveChannelsContacts
+
+            /******************************************************************************/
+            /***--- Checking which section (flow/segment/track/etc) to run -------------***/
+            /******************************************************************************/
+
+            --Please Note - can be duplicate with flow 
+
+            --DROP TABLE #SectionsToRun
+
+            --DECLARE @CampaignID BIGINT = ''
+            --DECLARE @ExecutionMethodID TINYINT = ''
+
+            SELECT DISTINCT CampaignID
+                           ,CampaignTrackID
+                           ,FlowID
+                           ,SegmentID
+            INTO   #SectionsToRun
+            FROM   CaMS.dbo.VW_CM_SegFlow_Details
+            WHERE  CampaignID = @CampaignID
+                AND ExecutionMethodID = @ExecutionMethodID --IMPORTANT - Take only the relevant Flows 
+                AND IsActive = 1
+
+            --SELECT * FROM #SectionsToRun
+
+
+            IF (OBJECT_ID ('tempdb..#RunSpecificSections') IS NOT NULL)
+                BEGIN
+                    DROP TABLE #RunSpecificSections;
+                END;
+
+
+            CREATE TABLE #RunSpecificSections
+            (
+                [CampaignID] BIGINT NOT NULL
+               ,[CampaignTrackID] BIGINT NOT NULL
+               ,[FlowID] BIGINT NOT NULL
+               ,[SegmentID] BIGINT NOT NULL
+            )
+
+            IF (@RunCampaignLevelGroupID IS NOT NULL)
+                BEGIN
+
+                    --DROP TABLE #CM_RunCampaignLevel_Management
+
+                    --DECLARE @RunCampaignLevelGroupID BIGINT = ''
+                    --DECLARE @CampaignID BIGINT = ''
+
+                    -- Please note - the table can be empty - if Low level
+                    SELECT *
+                    INTO   #CM_RunCampaignLevel_Management
+                    FROM   CaMS.dbo.CM_RunCampaignLevel_Management AS rclm
+                    WHERE  rclm.RunCampaignLevelGroupID = @RunCampaignLevelGroupID
+                        AND rclm.CampaignID = @CampaignID --Not must - only for check
+                        AND rclm.IsEnabled = 1
+                        AND rclm.ActionTypeID = 16 -- only "Insert - distribuation" Action
+                        AND rclm.CampaignLevelTypeID IN ( 1, 2, 3, 5 ) --High Level: Campaign, Flow, Segment, Track 
+                        AND ( --Please note - CancelDate - not Includes edges
+                                CancelDate IS NULL
+                                OR CancelDate IN ( '', '1970-01-01', '1900-01-01' )
+                                OR CONVERT (DATE, CancelDate) > CONVERT (DATE, GETDATE ())
+                            )
+
+                    --SELECT * FROM #CM_RunCampaignLevel_Management
+
+                    --DROP TABLE #RunSpecificSections 
+
+                    INSERT INTO #RunSpecificSections (CampaignID, CampaignTrackID, FlowID, SegmentID)
+                    SELECT DISTINCT CampaignID
+                                   ,CampaignTrackID
+                                   ,FlowID
+                                   ,SegmentID
+                    FROM   (
+
+
+                               --- *** Campaign Level *** ---
+                               SELECT     f.CampaignID
+                                         ,f.CampaignTrackID
+                                         ,f.FlowID
+                                         ,f.SegmentID
+                               FROM       #CM_RunCampaignLevel_Management AS clm
+                               INNER JOIN #SectionsToRun AS f ON (clm.CampaignLevelID = f.CampaignID)
+                               WHERE      clm.CampaignLevelTypeID = 1 --Campaign level 
+
+                               UNION
+
+                               --- *** Flow Level *** ---
+                               SELECT     f.CampaignID
+                                         ,f.CampaignTrackID
+                                         ,f.FlowID
+                                         ,f.SegmentID
+                               FROM       #CM_RunCampaignLevel_Management AS clm
+                               INNER JOIN #SectionsToRun AS f ON (clm.CampaignLevelID = f.FlowID)
+                               WHERE      clm.CampaignLevelTypeID = 2 --Flow level
+
+                               UNION
+
+                               --- *** Segment Level *** ---
+                               SELECT     f.CampaignID
+                                         ,f.CampaignTrackID
+                                         ,f.FlowID
+                                         ,f.SegmentID
+                               FROM       #CM_RunCampaignLevel_Management AS clm
+                               INNER JOIN #SectionsToRun AS f ON (clm.CampaignLevelID = f.SegmentID)
+                               WHERE      clm.CampaignLevelTypeID = 3 --Segment level 
+
+                               UNION
+
+                               --- *** Track Level *** ---
+                               SELECT     f.CampaignID
+                                         ,f.CampaignTrackID
+                                         ,f.FlowID
+                                         ,f.SegmentID
+                               FROM       #CM_RunCampaignLevel_Management AS clm
+                               INNER JOIN #SectionsToRun AS f ON (clm.CampaignLevelID = f.CampaignTrackID)
+                               WHERE      clm.CampaignLevelTypeID = 5 --Track level 
+                           ) AS p
+
+                    /*
+							--- TEST ---
+							SELECT * FROM #RunSpecificSections 
+
+							SELECT [#]=COUNT(*), CampaignID, CampaignTrackID, FlowID, SegmentID
+							FROM #RunSpecificSections 
+							GROUP BY CampaignID, CampaignTrackID, FlowID, SegmentID
+
+							*/
+
+                    IF EXISTS (
+                                  SELECT TOP 1 1
+                                  FROM   #RunSpecificSections
+                              )
+                        BEGIN
+                            DELETE f
+                            --SELECT f.*
+                            FROM   #SectionsToRun AS f
+                            WHERE  NOT EXISTS (
+                                                  SELECT *
+                                                  FROM   #RunSpecificSections AS rf
+                                                  WHERE  f.CampaignID = rf.CampaignID
+                                                      AND f.CampaignTrackID = rf.CampaignTrackID
+                                                      AND f.FlowID = rf.FlowID
+                                                      AND f.SegmentID = rf.SegmentID
+                                              )
+
+                        END --IF EXISTS (SELECT TOP 1 1 FROM #RunSpecificSections) 
+
+                /*
+							--- TEST ---
+							SELECT * FROM #SectionsToRun
+
+							SELECT [#]=COUNT(*), CampaignID, CampaignTrackID, FlowID, SegmentID
+							FROM #SectionsToRun
+							GROUP BY CampaignID, CampaignTrackID, FlowID, SegmentID
+
+							*/
+
+                END --IF (@RunCampaignLevelGroupID IS NOT NULL)
+
+            -----------------------------------------------------------------------------------------------------------------------------------------------------
+            ---*** START CAMPAIGN LOGIC *** ---------------------------------------------------------------------------------------------------------------------
+            -----------------------------------------------------------------------------------------------------------------------------------------------------
+
+            /******************************************************************************/
+            /***--- Contact History - already got --------------------------------------***/
+            /******************************************************************************/
+
+            --Please Note: If the campaign might be sent out to many contacts (~above 1M) we sholdn't use VW_CM_Contacts but instead use CRM_Contact_History
+
+            --DECLARE @CampaignID BIGINT = 
+
+            --DROP TABLE #ContactHistory
+
+            SELECT c.ContactID
+                  ,c.CardholderId
+                  ,c.CampaignID
+                  --,c.CampaignName
+                  ,c.CampaignTrackID
+                  --,c.CampaignTrackName
+                  ,c.FlowID
+                  --,c.FlowName
+                  ,c.SegmentID
+                  --,c.SegmentName
+                  ,c.[Group]
+                  --,c.Remark
+                  --,c.RunDate
+                  ,c.SendDate
+                  ,c.ContactStatusID
+                  --,c.FlowOrderID
+                  --,c.SegmentChannelID
+                  --,c.BulkID
+                  --,c.CycleID
+                  ,c.ChannelTypeID
+                  ,c.ChannelTemplateID
+                  --,c.ChannelKey
+                  ,c.IsControlGroup
+                  --,c.IsTest
+                  --,c.AGLevel
+                  --,c.AGDays
+                  --,c.ControlGroupPercentage
+                  --,c.NumberOfDaysToNextFlow
+                  ,c.IsLiveChannel
+            --,c.DeliverDate
+            --,c.OpenDate 
+            --,c.ClickDate 
+            --,c.IsReceived 
+            INTO   #ContactHistory
+            FROM   CaMS.dbo.VW_CM_Contacts AS c WITH (FORCESEEK)
+            WHERE  c.CampaignID = @CampaignID
+                AND c.ContactStatusID != 6
+                AND c.IsTest = 0;
+
+            CREATE UNIQUE CLUSTERED INDEX ContactID ON #ContactHistory (ContactID);
+            CREATE NONCLUSTERED INDEX IX_AlreadyGot ON #ContactHistory (FlowID, CardholderId);
+
+            /*
+			SELECT * FROM #ContactHistory
+
+			SELECT COUNT(*), COUNT(CardholderId), COUNT(DISTINCT CardholderId),CampaignName, CampaignTrackName, FlowName,SegmentName, [Group], IsControlGroup
+			FROM #ContactHistory
+			GROUP BY CampaignName, CampaignTrackName, FlowName,SegmentName, [Group], IsControlGroup
+			*/
+
+            /******************************************************************************/
+            /***--- Select a general population for all campaign (common population) ---***/
+            /******************************************************************************/
+
+
+
+            /******************************************************************************/
+            /***--- Start Loop - Run On Each Flow --------------------------------------***/
+            /******************************************************************************/
+
+            DECLARE @FlowID BIGINT;
+
+            DECLARE FlowsRun_XXXX CURSOR FOR -- < IMPORTANT !!!!!! - Change XXXX to CampaignID >
+            SELECT   DISTINCT FlowID
+            FROM     #SectionsToRun AS f
+            ORDER BY FlowID;
+
+            OPEN FlowsRun_XXXX;
+            FETCH NEXT FROM FlowsRun_XXXX
+            INTO @FlowID;
+
+            WHILE @@FETCH_STATUS = 0
+                BEGIN
+
+                    /**********************************************************************************************************************/
+                    /***--- START - Flow 1 - Insert ------------------------------------------------------------------------------------***/
+                    /**********************************************************************************************************************/
+
+                    IF (@FlowID = '') -- < IMPORTANT !!!!!! - Please insert flow id >
+                        BEGIN
+
+                            -------------------------------------------------------------
+                            --- *** Population for "insert" Action ~ distribution *** ---
+                            -------------------------------------------------------------
+
+                            INSERT INTO #FinalPop (CardholderId, CampaignTrackID, SegmentID, FlowEligibilityStatus -- Please note - you have additional fields to fill like - remark, parameters, group, Threshold, reward amount,DebitcardID, CTA, DisplayEndDate etc.
+                            )
+
+                            --DROP TABLE #Test
+                            --DECLARE @FlowID BIGINT = XXX
+
+                            SELECT DISTINCT CardholderId = fcad.AH_ID
+                                           ,CampaignTrackID = ''
+                                           ,SegmentID = ''
+                                           ,FlowEligibilityStatus = '' ---'NotEligible', 'Eligible', 'Pending'
+
+                            --INTO #Test
+                            FROM   BI_CRMDataMart.dbo.syn_active_Fact_CRM_AH_Data AS fcad WITH (NOLOCK)
+                            --LEFT JOIN #ContactHistory AS ag ON (fcad.AH_ID=ag.CardholderId AND )  --- Choose ag level(campaign/flow/segment/parameter).  flow level: ag.FlowID = @FlowID 
+
+                            WHERE  fcad.AH_Is_Blocked = 0 --AccountBlocked
+                                AND fcad.AH_Brand_ID = 1 ---Payoneer
+                        --AND fcad.AH_Has_MyAccount = 1 
+                        --AND fcad.AH_Add_High_Risk_Vertical_Payee = 0 -- Exclude High Risk Vertical
+                        --AND AG.CardholderId IS NULL ---exclude AG
+                        --AND fcad.AH_Is_Receiver = 1 -- any receiver
+                        --AND fcad.AH_RegCompleteDate_Receiver IS NOT NULL -- registered receiver
+                        --AND fcad.AH_RegCompleteDate_Receiver < GETDATE () - 6
+                        --AND fcad.AH_Last_Receiver_Activity_Date >= GETDATE () - 365
+
+                        /*
+						SELECT * FROM #Test AS t
+
+						SELECT COUNT(t.CardholderId), COUNT(DISTINCT t.CardholderId),t.CampaignTrackID,t.SegmentID,t.FlowEligibilityStatus
+						FROM #Test AS t
+						GROUP BY t.CampaignTrackID,t.SegmentID,t.FlowEligibilityStatus
+
+						--check pop
+						SELECT fcad.AH_Is_Guest,fcad.AH_Is_Payer,fcad.AH_Is_Receiver,fcad.AH_Customer_Type_ID, t.SegmentID ,COUNT(*)
+						FROM #Test AS t 
+						INNER JOIN BI_CRMDataMart.dbo.syn_active_Fact_CRM_AH_Data AS fcad WITH (NOLOCK) ON t.CardholderId=fcad.AH_ID
+						GROUP BY fcad.AH_Is_Guest,fcad.AH_Is_Payer,fcad.AH_Is_Receiver,fcad.AH_Customer_Type_ID, t.SegmentID 
+						ORDER BY count(*) desc
+
+						*/
+
+                        END; --Flow 1 - Insert
+
+
+                    /**********************************************************************************************************************/
+                    /***--- END - Flow 1 - Insert --------------------------------------------------------------------------------------***/
+                    /**********************************************************************************************************************/
+
+                    /**********************************************************************************************************************/
+                    /***--- START - Flow 1 - Update/Remove -----------------------------------------------------------------------------***/
+                    /**********************************************************************************************************************/
+
+                    IF (@FlowID = '') -- < IMPORTANT !!!!!! - Please insert flow id >
+                        BEGIN
+
+                            ------------------------------------------------------------------------------
+                            --- *** Population for "update/remove" action - live channels contacts *** ---
+                            ------------------------------------------------------------------------------
+
+                            /*
+							!IMPORTANT!
+							-- For "Update" action - add and fill only the fields that you want to update, like - Remark, ThresholdAmount, RewardAmount, CTA, DisplayEndDate, MessageLanguageID and parameters
+                            -- For "Update" action - if you want to update to Null value:
+								1. for varchar - fill the value 'cancel'
+								2. for int - fill the value '-99'
+								3. for datetime - fill the value '1970-01-01'
+							-- For "Remove" action - the parameters are not relevant
+							*/
+
+                            --DECLARE @ActionTypeID TINYINT = ''
+
+                            INSERT INTO #FinalPop_LiveChannelsContacts (ContactID, CampaignID)
+                            SELECT DISTINCT ch.ContactID
+                                           ,ch.CampaignID
+                            FROM   #ContactHistory AS ch
+                            WHERE  ch.IsControlGroup = 0 --Exclude control groups
+                                AND ch.IsLiveChannel = 1 --Only live channels 
+                                AND ch.ChannelTypeID = 11 -- Banner
+                                AND ch.FlowID = '' --Important!! Fill the correct flow id!
+                                AND NOT EXISTS ( --Deleting contacts which were removed already - check already got
+                                                   SELECT *
+                                                   FROM   dbo.CM_LiveChannelsContacts_Management AS m
+                                                   WHERE  ch.ContactID = m.ContactID
+                                                       AND m.ActionTypeID = @ActionTypeID
+                                                       AND m.ActionTypeID = 18 --"Remove" action 
+                                                       AND m.StatusID != 6
+                                               )
+
+                        END; --Flow 1 - Update/Remove
+
+                    /**********************************************************************************************************************/
+                    /***--- END - Flow 1 - Update/Remove -------------------------------------------------------------------------------***/
+                    /**********************************************************************************************************************/
+
+                    FETCH NEXT FROM FlowsRun_XXXX
+                    INTO @FlowID;
+
+                END; --End Cursor                                    
+
+            CLOSE FlowsRun_XXXX;
+
+            DEALLOCATE FlowsRun_XXXX;
+
+            /*
+			-- TEST --
+			SELECT * FROM #FinalPop 
+			SELECT * FROM #FinalPop_LiveChannelsContacts 
+			*/
+
+            -----------------------------------------------------------------------------------------------------------------------------------------------------
+            ---*** END CAMPAIGN LOGIC *** -----------------------------------------------------------------------------------------------------------------------
+            -----------------------------------------------------------------------------------------------------------------------------------------------------
+
+            /******************************************************************************/
+            /***--- INSERT INTO Population Validation process --------------------------***/
+            /******************************************************************************/
+
+            -------------------------------------------------------------------
+            --- *** Check which section (track/flow/segment/etc) to run *** ---
+            -------------------------------------------------------------------
+
+            IF EXISTS (
+                          SELECT TOP 1 1
+                          FROM   #RunSpecificSections
+                      )
+                BEGIN
+
+                    DELETE     fp
+                    --SELECT * 
+                    FROM       #FinalPop AS fp
+                    INNER JOIN CaMS.dbo.VW_CM_SegFlow_Details AS sf ON (
+                                                                           fp.CampaignTrackID = sf.CampaignTrackID
+                                                                           AND fp.SegmentID = sf.SegmentID
+                                                                       )
+                    WHERE      NOT EXISTS (
+                                              SELECT *
+                                              FROM   #RunSpecificSections AS f
+                                              WHERE  f.CampaignID = sf.CampaignID
+                                                  AND f.CampaignTrackID = fp.CampaignTrackID
+                                                  AND f.FlowID = sf.FlowID
+                                                  AND f.SegmentID = fp.SegmentID
+                                          )
+                END --IF EXISTS (SELECT TOP 1 1 FROM #RunSpecificSections)
+            /*
+            -- TEST --
+			SELECT * FROM #FinalPop
+
+			SELECT [#AH]=COUNT(*), CampaignID, CampaignTrackID, FlowID, SegmentID
+			FROM #FinalPop
+			GROUP BY CampaignID, CampaignTrackID, FlowID, SegmentID
+			*/
+
+            -------------------------------------------------------------
+            --- *** Population for "insert" Action ~ distribution *** ---
+            -------------------------------------------------------------
+
+            --** For execution from this part - uncomment the next variable and assign the right value:
+
+            DECLARE @ValidationPop [dbo].[CM_ContactsValidation_Population]
+
+            --INSERT INTO  CaMS.dbo.CM_Process_ContactsValidation_Population_ForTest_Yonatan
+            --INSERT INTO  CaMS.dbo.CM_Process_ContactsValidation_Population_ForTest_Shani
+            --INSERT INTO  CaMS.dbo.CM_Process_ContactsValidation_Population_ForTest_Elad
+            --INSERT INTO  CaMS.dbo.CM_Process_ContactsValidation_Population_ForTest_Hadas
+            INSERT INTO @ValidationPop (CardholderId, CampaignTrackID, SegmentID, FlowEligibilityStatus, [Group], Remark, ThresholdAmount, RewardAmount, DebitcardID, CTA, DisplayEndDate, ParamName1, ParamValue1, ParamName2, ParamValue2, ParamName3, ParamValue3, ParamName4, ParamValue4, ParamName5, ParamValue5, ParamName6, ParamValue6, ParamName7, ParamValue7, ParamName8, ParamValue8, ParamName9, ParamValue9, ParamName10, ParamValue10, ParamName11, ParamValue11, ParamName12, ParamValue12, ParamName13, ParamValue13, ParamName14, ParamValue14, ParamName15, ParamValue15, ParamName16, ParamValue16, ParamName17, ParamValue17, ParamName18, ParamValue18, ParamName19, ParamValue19, ParamName20, ParamValue20, ParamName21, ParamValue21, ParamName22, ParamValue22, ParamName23, ParamValue23, ParamName24, ParamValue24, ParamName25, ParamValue25, ParamName26, ParamValue26, ParamName27, ParamValue27, ParamName28, ParamValue28, ParamName29, ParamValue29, ParamName30, ParamValue30, ParamName31, ParamValue31, ParamName32, ParamValue32, ParamName33, ParamValue33, ParamName34, ParamValue34, ParamName35, ParamValue35, ParamName36, ParamValue36, ParamName37, ParamValue37, ParamName38, ParamValue38, ParamName39, ParamValue39, ParamName40, ParamValue40, ParamName41, ParamValue41, ParamName42, ParamValue42, ParamName43, ParamValue43, ParamName44, ParamValue44, ParamName45, ParamValue45, ParamName46, ParamValue46, ParamName47, ParamValue47, ParamName48, ParamValue48, ParamName49, ParamValue49, ParamName50, ParamValue50, ParamName51, ParamValue51, ParamName52, ParamValue52, ParamName53, ParamValue53, ParamName54, ParamValue54, ParamName55, ParamValue55, ParamName56, ParamValue56, ParamName57, ParamValue57, ParamName58, ParamValue58, ParamName59, ParamValue59, ParamName60, ParamValue60, ParamName61, ParamValue61, ParamName62, ParamValue62, ParamName63, ParamValue63, ParamName64, ParamValue64, ParamName65, ParamValue65, ParamName66, ParamValue66, ParamName67, ParamValue67, ParamName68, ParamValue68, ParamName69, ParamValue69, ParamName70, ParamValue70)
+            SELECT DISTINCT CardholderId          --MUST
+                           ,CampaignTrackID       --MUST
+                           ,SegmentID             --MUST
+                           ,FlowEligibilityStatus --MUST
+                           ,[Group]               --group for ruleset in population validation (like - A/B test) 
+                           ,Remark
+                           ,ThresholdAmount
+                           ,RewardAmount
+                           ,DebitcardID
+                           ,CTA                   --For channels with CTA, like Push Notification
+                           ,DisplayEndDate        --For live channel, like banner
+                           ,ParamName1            --All Channels
+                           ,ParamValue1           --All Channels
+                           ,ParamName2            --All Channels
+                           ,ParamValue2           --All Channels
+                           ,ParamName3            --All Channels
+                           ,ParamValue3           --All Channels
+                           ,ParamName4            --All Channels
+                           ,ParamValue4           --All Channels
+                           ,ParamName5            --All Channels
+                           ,ParamValue5           --All Channels
+                           ,ParamName6            --All Channels
+                           ,ParamValue6           --All Channels
+                           ,ParamName7            --All Channels
+                           ,ParamValue7           --All Channels
+                           ,ParamName8            --All Channels
+                           ,ParamValue8           --All Channels
+                           ,ParamName9            --All Channels
+                           ,ParamValue9           --All Channels
+                           ,ParamName10           --All Channels
+                           ,ParamValue10          --All Channels
+                           ,ParamName11           --Email
+                           ,ParamValue11          --Email
+                           ,ParamName12           --Email
+                           ,ParamValue12          --Email
+                           ,ParamName13           --Email
+                           ,ParamValue13          --Email
+                           ,ParamName14           --Email
+                           ,ParamValue14          --Email
+                           ,ParamName15           --Email
+                           ,ParamValue15          --Email
+                           ,ParamName16           --All Channels
+                           ,ParamValue16          --All Channels
+                           ,ParamName17           --All Channels
+                           ,ParamValue17          --All Channels
+                           ,ParamName18           --All Channels
+                           ,ParamValue18          --All Channels
+                           ,ParamName19           --All Channels
+                           ,ParamValue19          --All Channels
+                           ,ParamName20           --All Channels
+                           ,ParamValue20          --All Channels
+                           ,ParamName21           --ORN
+                           ,ParamValue21          --ORN
+                           ,ParamName22           --ORN
+                           ,ParamValue22          --ORN
+                           ,ParamName23           --ORN
+                           ,ParamValue23          --ORN
+                           ,ParamName24           --ORN
+                           ,ParamValue24          --ORN
+                           ,ParamName25           --ORN
+                           ,ParamValue25          --ORN
+                           ,ParamName26           --MyAccount message
+                           ,ParamValue26          --MyAccount message
+                           ,ParamName27           --MyAccount message
+                           ,ParamValue27          --MyAccount message
+                           ,ParamName28           --MyAccount message
+                           ,ParamValue28          --MyAccount message
+                           ,ParamName29           --MyAccount message
+                           ,ParamValue29          --MyAccount message
+                           ,ParamName30           --MyAccount message
+                           ,ParamValue30          --MyAccount message
+                           ,ParamName31           --SMS
+                           ,ParamValue31          --SMS
+                           ,ParamName32           --SMS
+                           ,ParamValue32          --SMS
+                           ,ParamName33           --SMS
+                           ,ParamValue33          --SMS
+                           ,ParamName34           --SMS
+                           ,ParamValue34          --SMS
+                           ,ParamName35           --SMS
+                           ,ParamValue35          --SMS
+                           ,ParamName36           --Banner - Live Channel
+                           ,ParamValue36          --Banner - Live Channel
+                           ,ParamName37           --Banner - Live Channel
+                           ,ParamValue37          --Banner - Live Channel
+                           ,ParamName38           --Banner - Live Channel
+                           ,ParamValue38          --Banner - Live Channel
+                           ,ParamName39           --Banner - Live Channel
+                           ,ParamValue39          --Banner - Live Channel
+                           ,ParamName40           --Banner - Live Channel
+                           ,ParamValue40          --Banner - Live Channel
+                           ,ParamName41           --Push Notification
+                           ,ParamValue41          --Push Notification
+                           ,ParamName42           --Push Notification
+                           ,ParamValue42          --Push Notification
+                           ,ParamName43           --Push Notification
+                           ,ParamValue43          --Push Notification
+                           ,ParamName44           --Push Notification
+                           ,ParamValue44          --Push Notification
+                           ,ParamName45           --Push Notification
+                           ,ParamValue45          --Push Notification
+                           ,ParamName46           --Jumbotron 
+                           ,ParamValue46          --Jumbotron
+                           ,ParamName47           --Jumbotron
+                           ,ParamValue47          --Jumbotron
+                           ,ParamName48           --Jumbotron
+                           ,ParamValue48          --Jumbotron
+                           ,ParamName49           --Jumbotron
+                           ,ParamValue49          --Jumbotron
+                           ,ParamName50           --Jumbotron
+                           ,ParamValue50          --Jumbotron
+                           ,ParamName51           --Pop-up
+                           ,ParamValue51          --Pop-up
+                           ,ParamName52           --Pop-up
+                           ,ParamValue52          --Pop-up
+                           ,ParamName53           --Pop-up
+                           ,ParamValue53          --Pop-up
+                           ,ParamName54           --Pop-up
+                           ,ParamValue54          --Pop-up
+                           ,ParamName55           --Pop-up
+                           ,ParamValue55          --Pop-up
+                           ,ParamName56           --WeChat
+                           ,ParamValue56          --WeChat
+                           ,ParamName57           --WeChat
+                           ,ParamValue57          --WeChat
+                           ,ParamName58           --WeChat
+                           ,ParamValue58          --WeChat
+                           ,ParamName59           --WeChat
+                           ,ParamValue59          --WeChat
+                           ,ParamName60           --WeChat
+                           ,ParamValue60          --WeChat
+                           ,ParamName61           --WhatsApp
+                           ,ParamValue61          --WhatsApp
+                           ,ParamName62           --WhatsApp
+                           ,ParamValue62          --WhatsApp
+                           ,ParamName63           --WhatsApp
+                           ,ParamValue63          --WhatsApp
+                           ,ParamName64           --WhatsApp
+                           ,ParamValue64          --WhatsApp
+                           ,ParamName65           --WhatsApp
+                           ,ParamValue65          --WhatsApp
+                           ,ParamName66           --MobileAppBanner
+                           ,ParamValue66          --MobileAppBanner
+                           ,ParamName67           --MobileAppBanner
+                           ,ParamValue67          --MobileAppBanner
+                           ,ParamName68           --MobileAppBanner
+                           ,ParamValue68          --MobileAppBanner
+                           ,ParamName69           --MobileAppBanner
+                           ,ParamValue69          --MobileAppBanner
+                           ,ParamName70           --MobileAppBanner
+                           ,ParamValue70          --MobileAppBanner
+            FROM   #FinalPop AS fp;
+
+            --SELECT * FROM @ValidationPop
+
+            ------------------------------------------------------------------------------
+            --- *** Population for "update/remove" action - live channels contacts *** ---
+            ------------------------------------------------------------------------------
+
+            DECLARE @LiveChannelsContactsPop [dbo].[CM_LiveChannelsContacts_Population]
+
+            --INSERT INTO  CaMS.dbo.CM_Process_ContactsValidation_LiveChannels_Population_ForTest_Hadas
+            INSERT INTO @LiveChannelsContactsPop (ContactID, CampaignID, Remark, ThresholdAmount, RewardAmount, CTA, DisplayEndDate, MessageLanguageID, ParamName1, ParamValue1, ParamName2, ParamValue2, ParamName3, ParamValue3, ParamName4, ParamValue4, ParamName5, ParamValue5, ParamName6, ParamValue6, ParamName7, ParamValue7, ParamName8, ParamValue8, ParamName9, ParamValue9, ParamName10, ParamValue10, ParamName11, ParamValue11, ParamName12, ParamValue12, ParamName13, ParamValue13, ParamName14, ParamValue14, ParamName15, ParamValue15, ParamName16, ParamValue16, ParamName17, ParamValue17, ParamName18, ParamValue18, ParamName19, ParamValue19, ParamName20, ParamValue20)
+            SELECT DISTINCT ContactID  --MUST
+                           ,CampaignID --MUST
+                           ,Remark
+                           ,ThresholdAmount
+                           ,RewardAmount
+                           ,CTA
+                           ,DisplayEndDate
+                           ,MessageLanguageID
+                           ,ParamName1
+                           ,ParamValue1
+                           ,ParamName2
+                           ,ParamValue2
+                           ,ParamName3
+                           ,ParamValue3
+                           ,ParamName4
+                           ,ParamValue4
+                           ,ParamName5
+                           ,ParamValue5
+                           ,ParamName6
+                           ,ParamValue6
+                           ,ParamName7
+                           ,ParamValue7
+                           ,ParamName8
+                           ,ParamValue8
+                           ,ParamName9
+                           ,ParamValue9
+                           ,ParamName10
+                           ,ParamValue10
+                           ,ParamName11
+                           ,ParamValue11
+                           ,ParamName12
+                           ,ParamValue12
+                           ,ParamName13
+                           ,ParamValue13
+                           ,ParamName14
+                           ,ParamValue14
+                           ,ParamName15
+                           ,ParamValue15
+                           ,ParamName16
+                           ,ParamValue16
+                           ,ParamName17
+                           ,ParamValue17
+                           ,ParamName18
+                           ,ParamValue18
+                           ,ParamName19
+                           ,ParamValue19
+                           ,ParamName20
+                           ,ParamValue20
+            FROM   #FinalPop_LiveChannelsContacts;
+
+            --SELECT * FROM @LiveChannelsContactsPop
+
+            /******************************************************************************/
+            /***--- Call to CM_Process_ContactsValidation ------------------------------***/
+            /******************************************************************************/
+
+            SET @Message = N'Call to CM_Process_ContactsValidation'
+
+            INSERT INTO dbo.CM_DailyLog (EventStatus, EventDescription, ExecutionMethodID, PrimaryIdentifierID, StoreProcedureName, ProcessID, ProcessTypeID, CycleID, RunNumber, ProcedureExecutionID)
+            VALUES (@Status, @Message, @ExecutionMethodID, @PrimaryIdentifierID, @StoreProcedureName, @ProcessID, @ProcessTypeID, @CycleID, @RunNumber, @ProcedureExecutionID)
+
+            --DECLARE @ProcedureExecutionID BIGINT = ''
+
+            EXEC dbo.CM_Process_ContactsValidation @ProcedureExecutionID, @ValidationPop, @LiveChannelsContactsPop -- @ProcedureExecutionID, @ValidationPop, @LiveChannelsContactsPop 
+
+            /******************************************************************************/
+            /***--- Print and Update CM_DailyLog ---------------------------------------***/
+            /******************************************************************************/
+
+            SET @Message = N'END'
+            SET @Status = 'Completed'
+            SET @IsRunning = 0
+
+            INSERT INTO dbo.CM_DailyLog (EventStatus, EventDescription, ExecutionMethodID, PrimaryIdentifierID, StoreProcedureName, ProcessID, ProcessTypeID, CycleID, RunNumber, ProcedureExecutionID)
+            VALUES (@Status, @Message, @ExecutionMethodID, @PrimaryIdentifierID, @StoreProcedureName, @ProcessID, @ProcessTypeID, @CycleID, @RunNumber, @ProcedureExecutionID)
+
+            UPDATE CaMS.dbo.CM_ProcedureExecution_Monitor
+            SET    ProcedureEndDate = GETDATE ()
+                  ,IsProcedureRunning = @IsRunning
+                  ,ProcedureStatus = @Status
+            WHERE  ProcedureExecutionID = @ProcedureExecutionID
+
+            IF (@UsedRunProcess = 0)
+                BEGIN
+
+                    UPDATE dbo.CM_RunProcess_Cycles
+                    SET    EndDate = GETDATE ()
+                          ,[Status] = @Status
+                          ,IsRunning = @IsRunning
+                    WHERE  CycleID = @CycleID
+
+                END
+
+        END TRY
+
+        /******************************************************************************/
+        /***--- Catch - this part is executed in case of an error ------------------***/
+        /******************************************************************************/
+
+        BEGIN CATCH
+
+            IF (@@TRANCOUNT > 0)
+                BEGIN
+                    ROLLBACK TRANSACTION
+                END
+
+            DECLARE @ErrorMessage   NVARCHAR(4000) = ERROR_MESSAGE ()
+                   ,@ErrorSeverity  INT            = ERROR_SEVERITY ()
+                   ,@ErrorState     INT            = ERROR_STATE ()
+                   ,@ErrorNumber    INT            = ERROR_NUMBER ()
+                   ,@ErrorProcedure NVARCHAR(4000) = ERROR_PROCEDURE ()
+                   ,@ErrorLine      INT            = ERROR_LINE ();
+
+            --SELECT ErrorMessage=@ErrorMessage,ErrorSeverity=@ErrorSeverity,ErrorState=@ErrorState,ErrorNumber=@ErrorNumber,ErrorProcedure=@ErrorProcedure,ErrorLine=@ErrorLine
+
+            SET @Message = N'ERRORS - ' + @StoreProcedureName + N' -' + N' ErrorMessage: ' + @ErrorMessage + N'. ErrorSeverity: ' + CONVERT (VARCHAR(50), @ErrorSeverity) + N'. ErrorState: ' + CONVERT (VARCHAR(50), @ErrorState) + N'. ErrorNumber: ' + CONVERT (VARCHAR(50), @ErrorNumber) + N'. ErrorLine: ' + CONVERT (VARCHAR(50), @ErrorLine) + N'. ErrorProcedure: ' + ISNULL (@ErrorProcedure, '')
+            SET @Status = 'Failed'
+            SET @IsRunning = 0
+
+            INSERT INTO dbo.CM_DailyLog (EventStatus, EventDescription, ExecutionMethodID, PrimaryIdentifierID, StoreProcedureName, ProcessID, ProcessTypeID, CycleID, RunNumber, ProcedureExecutionID)
+            VALUES (@Status, @Message, @ExecutionMethodID, @PrimaryIdentifierID, @StoreProcedureName, @ProcessID, @ProcessTypeID, @CycleID, @RunNumber, @ProcedureExecutionID)
+
+            UPDATE CaMS.dbo.CM_ProcedureExecution_Monitor
+            SET    ProcedureEndDate = GETDATE ()
+                  ,IsProcedureRunning = @IsRunning
+                  ,ProcedureStatus = @Status
+                  ,HasError = 1
+                  ,ErrorDesc = @Message
+            WHERE  ProcedureExecutionID = @ProcedureExecutionID
+
+            IF (@UsedRunProcess = 0)
+                BEGIN
+
+                    SET @Status = 'Completed' --Please note - status of the cycle and not campaign
+
+                    UPDATE dbo.CM_RunProcess_Cycles
+                    SET    EndDate = GETDATE ()
+                          ,[Status] = @Status
+                          ,IsRunning = @IsRunning
+                          ,HasError = 0 --Please note - error of the cycle and not campaign
+                          ,NumberOfProceduresWithError = 1
+                          ,ProceduresErrorDesc = @Message
+                    WHERE  CycleID = @CycleID
+
+                END
+
+        END CATCH;
+
+    END;
+
+
+
+GO
+
+
