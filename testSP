@@ -11,7 +11,7 @@ class DB:
     def __init__(self):
         server = *******
         database = 'CaMS'
-        username = 'guyya'
+        username = 'guyyakobov'
         password = ********
         self.con = pyodbc.connect('DRIVER={ODBC Driver 17 for SQL Server}; SERVER=' + server + '; DATABASE=' + database + ';UID=' + username + ';PWD=' + password,autocommit=True)
         self.cur = self.con.cursor()
