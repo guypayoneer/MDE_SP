@@ -1,0 +1,238 @@
+import tkinter as tk
+from tkinter import ttk
+import tkinter.font as tkFont
+import pyodbc
+import pandas as pd
+import json
+
+
+class DB:
+
+    def __init__(self):
+        server = *******
+        database = 'CaMS'
+        username = 'guyya'
+        password = ********
+        self.con = pyodbc.connect('DRIVER={ODBC Driver 17 for SQL Server}; SERVER=' + server + '; DATABASE=' + database + ';UID=' + username + ';PWD=' + password,autocommit=True)
+        self.cur = self.con.cursor()
+
+    def close_connection(self):
+        if self.con:
+            self.con.close()
+
+
+
+    def Generate_CampaignTemplateID(self):
+        self.cur.execute(
+            "SELECT (ISNULL(MAX(CampaignTemplateID),0)) + 1 FROM CM_CampaignTemplate_Population_Management WHERE TemplateTypeID = 9")
+        CampaignTemplateID = self.cur.fetchone()[0]
+
+        return CampaignTemplateID
+
+
+    def Insert_To_CM_CampaignTemplate_Population_Management(self,CampaignTemplateID, CampaignID, RunDate, PopulationSize=None,
+                                                            OrderPopBy=None, SendDate=None, ScheduleHour=None):
+
+
+        data = (CampaignTemplateID, CampaignID, RunDate, PopulationSize, OrderPopBy, SendDate, ScheduleHour)
+        sql_query = """INSERT INTO CM_CampaignTemplate_Population_Management (CampaignTemplateID ,CampaignID ,RunDate,
+        PopulationSize,OrderPopBy,SendDate,ScheduleHour, IsEnabled,ExecutionMethodID,TemplateTypeID) VALUES (?, ?,?, ?,
+        ?, ?, ?,1,3,9)"""
+        self.cur.execute(sql_query, data)
+
+
+
+    def Insert_To_CM_PopulationFileUploadMapping(self,CampaignTemplateID, CampaignTrackID, SegmentID, MassAction_JobID,
+                                                 ParamName1=None, ParamName2=None, ParamName3=None, ParamName4=None,
+                                                 ParamName5=None, ParamName6=None, ParamName7=None, ParamName8=None,
+                                                 ParamName9=None, ParamName10=None):
+
+        data = (
+            CampaignTemplateID, CampaignTrackID, SegmentID, MassAction_JobID, ParamName1, ParamName2, ParamName3,
+            ParamName4,ParamName5, ParamName6, ParamName7, ParamName8, ParamName9, ParamName10)
+        sql_query = """INSERT INTO CM_PopulationFileUploadMapping (CampaignTemplateID,CampaignTrackID,SegmentID,
+        MassAction_JobID,ParamName1 ,ParamName2,ParamName3 ,ParamName4 ,ParamName5 ,ParamName6 ,ParamName7 ,ParamName8 ,
+        ParamName9,ParamName10) VALUES (?, ?,?, ?,?, ?,?, ?,?, ?,?, ?,?, ?) """
+        self.cur.execute(sql_query, data)
+
+
+
+    def Insert_To_CM_PopulationList_ParametersActions(self,SegmentID, IdentifierTypeID, ActionTypeID_Param1=None,
+                                                      ActionTypeID_Param2=None, ActionTypeID_Param3=None,
+                                                      ActionTypeID_Param4=None, ActionTypeID_Param5=None,
+                                                      ActionTypeID_Param6=None, ActionTypeID_Param7=None,
+                                                      ActionTypeID_Param8=None, ActionTypeID_Param9=None,
+                                                      ActionTypeID_Param10=None, GROUP=None):
+
+        data = (
+            SegmentID, IdentifierTypeID, ActionTypeID_Param1, ActionTypeID_Param2, ActionTypeID_Param3, ActionTypeID_Param4,
+            ActionTypeID_Param5, ActionTypeID_Param6, ActionTypeID_Param7, ActionTypeID_Param8, ActionTypeID_Param9,
+            ActionTypeID_Param10, GROUP)
+        sql_query = """INSERT INTO CM_PopulationList_ParametersActions (SegmentID,IdentifierTypeID,ActionTypeID_Param1,
+        ActionTypeID_Param2,ActionTypeID_Param3,ActionTypeID_Param4, ActionTypeID_Param5,ActionTypeID_Param6,
+        ActionTypeID_Param7,ActionTypeID_Param8,ActionTypeID_Param9,ActionTypeID_Param10,[GROUP]) VALUES (?,?,?,?,?,?,?, 
+        ?,?,?,?, ?,?) """
+        self.cur.execute(sql_query, data)
+
+
+    def Insert_To_CM_PopulationFileUploadInputs (self, CampaignId, InputJsonData):
+        data = (CampaignId, InputJsonData)
+        sql_query = """INSERT INTO CM_PopulationFileUploadInputs (CampaignId, InputJsonData) VALUES (?,?) """
+        self.cur.execute(sql_query, data)
+
+
+
+
+
+
+class UserInputFrame(tk.Tk):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+
+
+        title = tk.Label(self, text="Population External File", font=('Arial',15,'bold','underline'))
+
+        self.campagin_id = tk.StringVar()
+        campaign_id_label = ttk.Label(self, text="Campaign ID: ")
+        campaign_id_entry = ttk.Entry(self, width = 10, textvariable=self.campagin_id)
+
+        self.campagin_track_id = tk.StringVar()
+        campagin_track_id_label = ttk.Label(self, text="Campaign Track ID: ")
+        campagin_track_id_entry = ttk.Entry(self, width = 10, textvariable=self.campagin_track_id)
+
+        self.mass_action_job_id = tk.StringVar()
+        mass_action_job_id_label = ttk.Label(self, text="Mass Action Job ID: ")
+        mass_action_job_id_entry = ttk.Entry(self, width = 10, textvariable=self.mass_action_job_id )
+
+        self.segment_id = tk.StringVar()
+        segment_id_label = ttk.Label(self, text="Segment ID: ")
+        segment_id_entry = ttk.Entry(self, width = 10, textvariable=self.segment_id )
+
+        self.run_date = tk.StringVar()
+        run_date_label = ttk.Label(self, text="Run Date: ")
+        run_date_entry = ttk.Entry(self, width = 10, textvariable=self.run_date )
+
+        preview_button = ttk.Button(self, text="Preview Inputs", command=self.display_inputs)
+        submit_button = ttk.Button(self, text="Insert Inputs Into DataBase", command=self.collect_inputs)
+        #close_button = ttk.Button(self, text="Close Window", command=self.destroy)
+
+
+        #######  GRID   ########
+
+        title.grid(column = 0, row=0,sticky = "EN")
+        #title.place( anchor="ne")
+        campaign_id_label.grid(column = 0, row=1,sticky = "EW")
+        campaign_id_entry.grid(column = 1, row=1,sticky = "EW")
+        campaign_id_entry.focus()
+
+        campagin_track_id_label.grid(column = 0, row=2,sticky = "EW")
+        campagin_track_id_entry.grid(column = 1, row=2,sticky = "EW")
+        campagin_track_id_entry.focus()
+
+        mass_action_job_id_label.grid(column = 0, row=3,sticky = "EW")
+        mass_action_job_id_entry.grid(column = 1, row=3,sticky = "EW")
+        mass_action_job_id_entry.focus()
+
+        segment_id_label.grid(column = 0, row=4,sticky = "EW")
+        segment_id_entry.grid(column = 1, row=4,sticky = "EW")
+        segment_id_entry.focus()
+
+        run_date_label.grid(column = 0, row=5,sticky = "EW")
+        run_date_entry.grid(column = 1, row=5,sticky = "EW")
+        run_date_entry.focus()
+
+        preview_button.grid(column = 0, row=6,sticky = "EW")
+        submit_button.grid(column = 0, row=7,sticky = "EW")
+        #close_button.grid(column = 0, row=18,sticky = "E")
+
+
+        for child in self.winfo_children():
+            child.grid_configure(padx= 10 , pady = 10)
+
+
+
+
+    def display_inputs(self):
+
+        campaig_id_result = ttk.Label(self, text = "Campaign ID: ")
+        campaig_id_dispay = ttk.Label(self, textvariable=self.campagin_id)
+
+        campagin_track_id_result = ttk.Label(self, text = "Campaign Track ID: ")
+        campagin_track_id_dispay = ttk.Label(self, textvariable=self.campagin_track_id)
+
+        mass_action_job_id_result = ttk.Label(self, text = "Mass_Action_Job_ID: ")
+        mass_action_job_id_dispay = ttk.Label(self, textvariable=self.mass_action_job_id)
+
+        segment_id_result = ttk.Label(self, text = "Segment ID: ")
+        segment_id_dispay = ttk.Label(self, textvariable=self.segment_id)
+
+        run_date_result = ttk.Label(self, text = "Run Date: ")
+        run_date_dispay = ttk.Label(self, textvariable=self.run_date)
+
+
+        campaig_id_result.grid(column = 0, row=10,sticky = "EW")
+        campaig_id_dispay.grid(column = 1, row=10,sticky = "EW")
+
+        campagin_track_id_result.grid(column = 0, row=11,sticky = "EW")
+        campagin_track_id_dispay.grid(column = 1, row=11,sticky = "EW")
+
+        mass_action_job_id_result.grid(column = 0, row=12,sticky = "EW")
+        mass_action_job_id_dispay.grid(column = 1, row=12,sticky = "EW")
+
+        segment_id_result.grid(column = 0, row=13,sticky = "EW")
+        segment_id_dispay.grid(column = 1, row=13,sticky = "EW")
+
+        run_date_result.grid(column = 0, row=14,sticky = "EW")
+        run_date_dispay.grid(column = 1, row=14,sticky = "EW")
+
+
+    def collect_inputs(self):
+        print("Insert Values Into DB")
+        input = ['Campaign ID','Campaign Track ID','Mass Action Job ID','Segment ID','Run Date']
+        output = [self.campagin_id.get() ,self.campagin_track_id.get(), self.mass_action_job_id.get(), self.segment_id.get(), self.run_date.get()]
+        global output_dict
+        output_dict = { k:v for k,v in zip(input,output)}
+        print(output_dict)
+        DB_class = DB()
+        try:
+
+            CampaignTemplateID = DB_class.Generate_CampaignTemplateID()
+            DB_class.Insert_To_CM_CampaignTemplate_Population_Management(CampaignTemplateID, self.campagin_id.get(),
+                                                                        self.run_date.get())
+            DB_class.Insert_To_CM_PopulationFileUploadMapping(CampaignTemplateID, self.campagin_track_id.get(),
+                                                             self.segment_id.get(), self.mass_action_job_id.get())
+            #DB_class.Insert_To_CM_PopulationList_ParametersActions(self.segment_id.get(), 1)
+            #DB_class.Insert_To_CM_PopulationFileUploadInputs(self.campagin_id.get(),json.dumps(output_dict))
+            DB_class.close_connection()
+            print("Records Has Been Created")
+            insert_message = tk.Label(self, text="Records Has Benn Created Successfully", bg='yellow',
+                                      font=('Arial', 10, 'bold', 'underline'))
+            insert_message.grid(column=0, row=15, sticky="EW")
+        except Exception as e:
+            print(f'Error: {e}')
+            error = tk.Label(self, text=f'Error: {e}', bg='yellow',wraplength=250,
+                                      font=('Arial', 10, 'bold', 'underline'))
+            error.grid(column=0, row=15, sticky="EW")
+
+
+        #return json.dumps(output_dict)
+
+
+
+
+
+
+
+
+
+if __name__ == "__main__":
+
+
+
+    root = UserInputFrame()
+
+    root.geometry("400x600")
+
+    root.mainloop()
+
